@@ -79,7 +79,9 @@ static struct crc_init known_crc_init[] = {
         {0x2C22, "Santa Barbara, CA", "Southern California Edison"},
         {0x142A, "Washington", "Puget Sound Energy"},
         {0x47F7, "Pennsylvania", "PPL Electric"},
-        {0x22c6, "Long Island, NY", "PSEG Long Island"}};
+        {0x22c6, "Long Island, NY", "PSEG Long Island"},
+        {0x1D65, "Phoenix, AZ", "APS"},
+        {0x4E2D, "Milwaukee, WI", "We Energies"}};
 
 static int gridstream_checksum(int fulllength, uint16_t length, uint8_t *bits, int adjust)
 {
@@ -132,6 +134,7 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     char srcwanaddress_str[13]  = "";
     char srcaddress_str[9]      = "";
     char destaddress_str[9]     = "";
+    char *data_rate             = "";
     bool srcwanaddress          = false;
     uint32_t uptime             = 0;
     time_t clock;
@@ -142,7 +145,8 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     int subtype_mod = 0;
     int crcidx;
     int decoded_len;
-    offset = bitbuffer_search(bitbuffer, 0, 0, preambleV4, 36);
+    data_rate = strrchr(decoder->name, ' ')+1;
+    offset    = bitbuffer_search(bitbuffer, 0, 0, preambleV4, 36);
     if (offset >= bitbuffer->bits_per_row[0]) {
         offset = bitbuffer_search(bitbuffer, 0, 0, preambleV5, 37);
         if (offset >= bitbuffer->bits_per_row[0]) {
@@ -202,6 +206,7 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             /* clang-format off */
             data = data_make(
                 "model",        "",                     DATA_STRING,    "LandisGyr-GS",
+                "datarate",     "Data Rate",            DATA_STRING,    data_rate,
                 "networkID",    "Network ID",           DATA_STRING,    found_crc,
                 "location",     "Location",             DATA_STRING,    known_crc_init[crcidx].location,
                 "provider",     "Provider",             DATA_STRING,    known_crc_init[crcidx].provider,
@@ -231,6 +236,7 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 
 static char const *const output_fields[] = {
         "model",
+        "datarate",
         "networkID",
         "location",
         "provider",
@@ -253,7 +259,7 @@ r_device const gridstream96 = {
         .modulation  = FSK_PULSE_PCM,
         .short_width = 104,
         .long_width  = 104,
-        .reset_limit = 20000,
+        .reset_limit = 10000,
         .decode_fn   = &gridstream_decode,
         .disabled    = 0,
         .fields      = output_fields,
@@ -264,7 +270,7 @@ r_device const gridstream192 = {
         .modulation  = FSK_PULSE_PCM,
         .short_width = 52,
         .long_width  = 52,
-        .reset_limit = 20000,
+        .reset_limit = 10000,
         .decode_fn   = &gridstream_decode,
         .disabled    = 0,
         .fields      = output_fields,
@@ -275,7 +281,7 @@ r_device const gridstream384 = {
         .modulation  = FSK_PULSE_PCM,
         .short_width = 22,
         .long_width  = 22,
-        .reset_limit = 20000,
+        .reset_limit = 10000,
         .decode_fn   = &gridstream_decode,
         .disabled    = 0,
         .fields      = output_fields,
