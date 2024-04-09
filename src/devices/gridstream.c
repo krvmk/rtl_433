@@ -137,6 +137,8 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
     char *data_rate             = "";
     bool srcwanaddress          = false;
     uint32_t uptime             = 0;
+    int count                   = 0;
+    int timer                   = 0;
     time_t clock;
     char clock_str[80];
     int subtype;
@@ -189,10 +191,14 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 srcwanaddress = true;
                 sprintf(srcaddress_str, "%02x%02x%02x%02x", b[24], b[25], b[26], b[27]);
                 uptime = ((uint32_t)b[18] << 24) | (b[19] << 16) | (b[20] << 8) | b[21];
+                count  = b[17];
+                timer  = (b[33] << 8) | b[34];
                 break;
             case 0xD5:
                 sprintf(destaddress_str, "%02x%02x%02x%02x", b[5], b[6], b[7], b[8]);
                 sprintf(srcaddress_str, "%02x%02x%02x%02x", b[9], b[10], b[11], b[12]);
+                count = b[13];
+                timer = (b[stream_len - 3]) | b[stream_len - 2];
                 if (stream_len == 0x47) {
                     clock  = ((uint32_t)b[14] << 24) | (b[15] << 16) | (b[16] << 8) | b[17];
                     uptime = ((uint32_t)b[22] << 24) | (b[23] << 16) | (b[24] << 8) | b[25];
@@ -219,6 +225,8 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
                 "destaddress",  "Target Meter ID",      DATA_COND,      subtype == 0xD5, DATA_STRING, destaddress_str,
                 "timestamp",    "Timestamp",            DATA_COND,      subtype == 0xD5 && stream_len == 0x47, DATA_STRING, clock_str,
                 "uptime",       "Uptime",               DATA_COND,      uptime > 0, DATA_INT, uptime,
+                "counter",      "Counter",              DATA_COND,      count > 0, DATA_INT, count,
+                "timer",        "Timer",                DATA_COND,      timer > 0, DATA_INT, timer,
                 NULL);
             /* clang-format on */
 
@@ -237,6 +245,8 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
 static char const *const output_fields[] = {
         "model",
         "datarate",
+        "counter",
+        "timer",
         "networkID",
         "location",
         "provider",
