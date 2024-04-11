@@ -233,6 +233,7 @@ static int gridstream_decode(r_device *decoder, bitbuffer_t *bitbuffer)
             decoder_output_data(decoder, data);
             break;
         }
+	decoder_log_bitrow(decoder, 0, __func__, b, decoded_len * 8, "decoded frame data");
         decoder_log_bitrow(decoder, 0, __func__, bitbuffer->bb[0], bitbuffer->bits_per_row[0], "raw frame data");
         // Return 1 if message successfully decoded
         return 1;
